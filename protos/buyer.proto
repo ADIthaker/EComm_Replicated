@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package buy;
+
+// The greeting service definition.
+service Buy {
+	// Unary
+	rpc CreateAccount (Buyer) returns (UpdateResponse); 
+	rpc GetUserID (Login) returns (UpdateResponse);
+	rpc GetSellerRating (SellerId) returns (SellerRating);
+	rpc GetAvailableItems (Search) returns (Items);
+	rpc AddItems (Cart) returns (UpdateResponse);
+	rpc RemoveItems (Cart) returns (UpdateResponse);
+	rpc GetCart (UserID) returns (Cart);
+	rpc DeleteCart (UserID) returns (UpdateResponse);
+	rpc SaveCart (Cart) returns (UpdateResponse);
+    rpc ProvideFeedback (Feedbacks) returns (UpdateResponse);
+    rpc MakePurchaseCart (PurchaseCart) returns (UpdateResponse);
+    rpc MakePurchaseDB (PurchaseDB) returns (UpdateResponse);
+    rpc GetHistory(UserID) returns (History);
+}
+
+message PurchaseCart {
+    Cart cart = 1;
+    string name = 2;
+    string cardNo = 3;
+    string expiry = 4;
+}
+
+message PurchaseDB {
+    string buyerId = 1;
+    string name = 2;
+    string cardNo = 3;
+    string expiry = 4;
+}
+
+message History {
+    repeated Cart purchases=1;
+}
+
+message Feedback {
+    int32 feedback = 1;
+    string sellerId = 2;
+}
+
+message Feedbacks {
+    repeated Feedback fb=1;
+}
+
+message Purchase {
+    string buyerId = 1;
+    repeated ItemId ids = 2;
+    repeated Quantity quantities = 3;
+}
+
+message Purchases {
+    repeated Purchase history = 1;
+}
+
+message Login {
+    string name = 1;
+    string password = 2;
+}
+
+message UserID {
+    string id = 1;
+}
+
+message SellerRating {
+    int32 posFb = 1;
+    int32 negFb = 2;
+}
+
+message SellerId {
+    string id = 1;
+}
+
+message Item {
+    string name = 1;
+    int32 category = 2;
+    int32 price = 3;
+    string id = 4;
+    string keywords = 5;
+    int32 cond = 6;
+    int32 quantity = 7;
+    string sellerId = 8;
+}
+
+message ItemId {
+    string id = 1;
+}
+
+message ItemIds {
+    repeated ItemId ids = 1;
+    string buyerId = 2;
+}
+
+message Items {
+    repeated Item items = 1;
+}
+
+message Search { 
+    int32 category = 1;
+    string keywords = 2;
+}
+
+message Quantity {
+    int32 q = 1;
+}
+
+message Cart {
+    string buyerId = 1;
+    repeated ItemId ids = 2;
+    repeated Quantity quantities = 3;
+}
+
+message Buyer {
+    string username = 1;
+    string pwd = 2;
+    string id = 3;
+    int32 items = 4;
+}
+
+message UpdateResponse {
+    bool error = 1;
+    string msg = 2;
+}
+
+message DisplayItemsReply {
+    repeated Item items = 1;
+}
