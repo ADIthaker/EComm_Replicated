@@ -41,8 +41,10 @@ class CustomerMember():
             break
 
     def deliver(self, msg):
-        #read message and then call it on the cust_db
-        pass
+        func = msg['func']
+        args = msg['args']
+        # read message and then call it on the cust_db
+        self.cust_db.func(args)
 
     def recv_sequence(self, msg, sender_addr):
         if msg['global'] - self.global_number > 1 and msg['global'] < self.seq_nack_buffer.front()['global']:
@@ -99,23 +101,25 @@ class CustomerMember():
         
         # check if sequence can be sent or not
         if self.id == (self.global_number+1)%self.n:
-            if (self.max_global == self.global_number) and () and (): 
+            if (self.max_global == self.global_number): 
+                self.send_sequence(msg)
                 #all sequence msg upto here are chosen
-            
-    def send_retransmit(self, msg):
         
+    def send_retransmit(self, msg):
+        pass
 
     def ask_retransmit(self, member, msg_id, msg_type):
         if msg_type == "request":
             request = {
                 'msg_type': 'retransmit',
-                'request_id': ((self.IP, self.PORT), self.local_number), #s_id is its addr
+                'request_id': (self.id, self.local_number), #s_id is its addr
                 'msg_id': msg_id,
                 
             }
-            self.
+            self.sendto()
         elif msg_type == "sequence":
             request = {
                 'msg_type': 'retransmit',
-                'request_id': ((self.IP, self.PORT), self.max_global), #s_id is its addr
+                'request_id': (self.id, self.max_global), #s_id is its addr
             }
+            self.sendto()
