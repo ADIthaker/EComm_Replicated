@@ -11,7 +11,21 @@ import grpc_pb2.buyer_pb2_grpc as buyer_pb2_grpc
 import grpc_pb2.buyer_pb2 as buyer_pb2
 from apis.buyer_api import BuyerAPIs
 from utils.database import ProductDatabase, CustomerDatabase
+from customer_group import CustomerMember
 
+'''
+Earlier:
+Server Interface -> Server Backend
+Now:
+Server Interface -> Group Member -> Goes to other group members to find which one will assign global id k -> Checks if all messages with gid less than k have been delivered -> Sends message and global id to all members -> Then each of them call the db.
+
+NACK Conditions:
+Each group member has a table of member id: local seq no recvd.
+if any number missed send NACK of that sequence number to member
+
+Global seq number: When a number is missed send NACK to kmodn member id.
+
+'''
 class BuyServicer(buyer_pb2_grpc.BuyServicer):
     def CreateAccount(self, request, context):
         print("Got a CreateAccount Request", request)
