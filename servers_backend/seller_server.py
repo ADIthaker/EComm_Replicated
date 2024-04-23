@@ -7,6 +7,7 @@ sys.path.append(os.environ.get("DIR"))
 #sys.path.append('H:/MS/Sem 2/DS/CSCI5673_Distributed_Systems/AssignmentTwo')
 from concurrent import futures
 import time
+import random
 import grpc
 import grpc_pb2.seller_pb2_grpc as seller_pb2_grpc
 import grpc_pb2.seller_pb2 as seller_pb2
@@ -14,6 +15,8 @@ from apis.seller_api import SellerAPIs
 from utils.database import ProductDatabase, CustomerDatabase
 
 class SellServicer(seller_pb2_grpc.SellServicer):
+    def __init__(self, port, partners) -> None:
+        self.api = SellerAPIs(CustomerDatabase(), ProductDatabase('localhost:%d' % port, partners))
     def CreateAccount(self, request, context):
         print("Got a CreateAccount Request", request)
         user = {
@@ -23,7 +26,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
             "PosFb": request.posFb,
             "NegFb": request.negFb
         }
-        api_handler = SellerAPIs(CustomerDatabase(), ProductDatabase())
+        api_handler = self.api
         response = api_handler.create_seller(user)
         create_user_reply = seller_pb2.UpdateResponse()
         if response is None:
@@ -40,7 +43,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
             "name": request.name,
             "password": request.password
         }
-        api_handler = SellerAPIs(CustomerDatabase(), ProductDatabase())
+        api_handler = self.api
         result = api_handler.get_seller_id(seller)
         seller_reply = seller_pb2.UpdateResponse()
         print(result)
@@ -56,7 +59,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
     def GetSellerRating(self, request, context):
         print("Got a GetSellerRating Request")
         userId = request.id
-        api_handler = SellerAPIs(CustomerDatabase(), ProductDatabase())
+        api_handler = self.api
         result = api_handler.get_seller_rating(userId)
         print("result", result)
         seller_rating_reply = seller_pb2.SellerRating()
@@ -78,8 +81,10 @@ class SellServicer(seller_pb2_grpc.SellServicer):
         "cond": request.cond,
         "sellerId": request.sellerId
         }
-        api_handler = SellerAPIs(CustomerDatabase(), ProductDatabase())
+        print(item)
+        api_handler = self.api
         result = api_handler.put_item_for_sale(item)
+        print(result)
         reply = seller_pb2.UpdateResponse()
         if result is not None:
             reply.error = False
@@ -92,7 +97,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
     
     def ChangeSalePrice(self, request, context):
         print("Got a ChangeSalePrice Request")
-        api_handler = SellerAPIs(CustomerDatabase(), ProductDatabase())
+        api_handler = self.api
         result = api_handler.change_sale_price(request.itemId, request.sellerId , request.price)
         reply = seller_pb2.UpdateResponse()
         print(result)
@@ -107,7 +112,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
 
     def RemoveItem(self, request, context):
         print("Got a RemoveItem Request")
-        api_handler = SellerAPIs(CustomerDatabase(), ProductDatabase())
+        api_handler = self.api
         result = api_handler.remove_item(request.itemId, request.sellerId , request.quantity)
         reply = seller_pb2.UpdateResponse()
         print(result)
@@ -121,9 +126,9 @@ class SellServicer(seller_pb2_grpc.SellServicer):
         return reply
 
     def DisplayItems(self, request, context):
-        print("Got DisplayItems request")
         sellerId = request.id
-        api_handler = SellerAPIs(CustomerDatabase(), ProductDatabase())
+        print(f"Got DisplayItems request from {sellerId}")
+        api_handler = self.api
         result = api_handler.display_items(sellerId)
         print(result)
         reply = seller_pb2.DisplayItemsReply()
@@ -145,11 +150,14 @@ class SellServicer(seller_pb2_grpc.SellServicer):
     
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    seller_pb2_grpc.add_SellServicer_to_server(SellServicer(), server)
+    partners = ['localhost:10002', 'localhost:10003', 'localhost:10004', 'localhost:10005']
+    seller_pb2_grpc.add_SellServicer_to_server(SellServicer(10001, partners), server)
     server.add_insecure_port("localhost:5051")
     server.start()
     print("Server Started")
+    print('RAFT READY')
     server.wait_for_termination()
+
 
 if __name__ == "__main__":
     serve()
