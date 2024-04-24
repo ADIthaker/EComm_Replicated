@@ -1,7 +1,9 @@
+import requests
+
 class SellerAPIs:
-    def __init__(self, cust_db, prod_db):
+    def __init__(self, cust_db, raft_ip):
         self.cust_db = cust_db
-        self.prod_db = prod_db
+        self.raft = raft_ip
 
     def create_seller(self, seller): #create account checked
         self.cust_db.create_seller(seller)
@@ -29,12 +31,16 @@ class SellerAPIs:
         return None
     
     def put_item_for_sale(self, item): #checked
-        Id = self.prod_db.create_item(item)
+        # Id = self.prod_db.create_item(item)
+        payload = {"key": 'put_item_for_sale', "value": item}
+        Id = requests.put(self.raft, json={'payload': payload})
         #increase the count of items of this seller by 1
+        Id = Id.json()
         return Id
     
     def change_sale_price(self, Id, seller_id, price): #checked
-        item = self.prod_db.get_item(Id, seller_id)
+        # item = self.prod_db.get_item(Id, seller_id)
+        item = requests.get(self.raft, json={'Id': Id, 'seller_id': seller_id})
         new_item = {}
         if item is not None and len(item) != 0:
                 item = item[0]
@@ -46,14 +52,16 @@ class SellerAPIs:
                 new_item['price'] = price
                 new_item['seller_id'] = item[6]
                 new_item['quantity'] = item[7]
-                self.prod_db.update_item(new_item)
+                # self.prod_db.update_item(new_item)
+                requests.put(self.raft, json={'new_item': new_item})
         else:
             print("Item Not Found")
             return item
         return item
     
     def remove_item(self, Id, seller_id, quantity): #checked
-        item = self.prod_db.get_item(Id, seller_id)
+        # item = self.prod_db.get_item(Id, seller_id)
+        item = requests.get(self.raft, json={'Id': Id, 'seller_id': seller_id})
         new_item = {}
         if item is not None and len(item)!=0:
             item = item[0]
@@ -68,14 +76,17 @@ class SellerAPIs:
                 new_item['price'] = item[5]
                 new_item['seller_id'] = item[6]
                 new_item['quantity'] = item[7] - quantity
-                self.prod_db.update_item(new_item)
+                # self.prod_db.update_item(new_item)
+                requests.put(self.raft, json={'new_item': new_item})
         else:
             print("Item Not Found")
             return item
         return item
         
     def display_items(self, seller_id): #checked
-        items = self.prod_db.get_items(seller_id)
-        return items
-    
-
+        # items = self.prod_db.get_items(seller_id)
+        payload = {"key": 'display_items', "value": seller_id}
+        items = requests.put(self.raft, json={'payload': payload})
+        items = items.json()
+        print(items)
+        return items['result']

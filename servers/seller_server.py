@@ -243,7 +243,7 @@ def rest_display_items_on_sale():
 
 if __name__ == "__main__":
     try:
-        app.run(host='localhost', port=5001, debug=False)  # 10.200.194.61
+        app.run(host='localhost', port=5006, debug=False)  # 10.200.194.61
     finally:
         # Gracefully terminate the session_timeout_thread
         session_timeout_thread.join()

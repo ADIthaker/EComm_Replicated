@@ -1,27 +1,22 @@
 import mysql.connector
 import uuid
 import os
-import time
 from dotenv import load_dotenv
-from pysyncobj import SyncObj, replicated
 
-load_dotenv()
+load_dotenv(override=True)
 
-class ProductDatabase(SyncObj):
-    def __init__(self, selfNodeAddr, otherNodeAddrs):
+class ProductDatabase:
+    def __init__(self):
         try:
-            super(ProductDatabase, self).__init__(selfNodeAddr, otherNodeAddrs)
-            print(otherNodeAddrs)
-            time.sleep(10)
             mydb = mysql.connector.connect(
-            host="localhost",
+            host=os.environ.get('SQL_SERVER'),
             user=os.environ.get("USER"),
             password=os.environ.get("PWD"),
-            db="product"
+            db="product5"
             )
             self.conn = mydb
             self.cursor = self.conn.cursor()
-            self.cursor.execute("CREATE DATABASE IF NOT EXISTS Product")
+            # self.cursor.execute("CREATE DATABASE IF NOT EXISTS Product")
             self.cursor.execute('''CREATE TABLE IF NOT EXISTS Item(
                                 Pname VARCHAR(32) NOT NULL, 
                                 Category INT NOT NULL,
@@ -34,12 +29,9 @@ class ProductDatabase(SyncObj):
                                 PRIMARY KEY(Id)
                                 )''')
             print("Product DB is RUNNING...")
-            time.sleep(10)
-            print(self.getStatus())
         except mysql.connector.Error as error:
             print("Failed to create table in MySQL: {}".format(error))
 
-    @replicated
     def create_item(self, item):
         try:
             Id = uuid.uuid1().hex + str(item['category'])
@@ -50,9 +42,8 @@ class ProductDatabase(SyncObj):
             return Id
         except mysql.connector.Error as error:
             print("Failed to insert entry in MySQL: {}".format(error))
-            return "Failed to insert entry in MySQL: {}".format(error)
+        return None
 
-    @replicated
     def get_item(self, Id, seller_id):
         try:
             query = "SELECT * FROM Item WHERE Id=%s AND SellerID =%s"
@@ -61,8 +52,8 @@ class ProductDatabase(SyncObj):
             return result
         except mysql.connector.Error as error:
             print("Failed to get product in MySQL: {}".format(error))
-            return None
-    @replicated
+        return None
+
     def get_items(self, seller_id):
         try:
             query = "SELECT * FROM Item WHERE SellerID =%s"
@@ -71,9 +62,8 @@ class ProductDatabase(SyncObj):
             return result
         except mysql.connector.Error as error:
             print("Failed to get product in MySQL: {}".format(error))
-            return None
-    
-    @replicated
+        return None
+   
     def search_item(self, search):
         try:
             query = "SELECT * FROM Item WHERE Category=%s AND INSTR(Keyword, %s) > 0"
@@ -82,9 +72,8 @@ class ProductDatabase(SyncObj):
             return result
         except mysql.connector.Error as error:
             print("Failed to get product in MySQL: {}".format(error))
-            return None
+        return None
 
-    @replicated
     def update_item(self, item):
         try:
             query = "UPDATE Item SET Pname=%s, Category=%s, Keyword=%s, Cond=%s, Price=%s, Quantity=%s WHERE Id=%s AND SellerID=%s"
@@ -96,7 +85,6 @@ class ProductDatabase(SyncObj):
             print("Failed to update product in MySQL: {}".format(error))
             return False
 
-    @replicated
     def delete_item(self, Id):
         try:
             query = "DELETE FROM Item WHERE Id=%s"
@@ -113,6 +101,7 @@ class ProductDatabase(SyncObj):
             self.cursor.close()
             self.conn.close()
             print("MySQL Product connection is closed")
+
 
 class CustomerDatabase:
     def __init__(self):
