@@ -159,6 +159,7 @@ def rest_put_item_for_sale():
         # Set last activity time for the new connection
         last_activity_times[client_address] = time.time()
         data = request.get_json()
+        print(data)
         item = create_item_for_sale(data.get('item_name'), data.get('item_category'), data.get('keywords'),
                                     data.get('condition'), data.get('sale_price'), str(UserID), data.get('quantity'))
         route_handler = SellerRoutes()

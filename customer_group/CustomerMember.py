@@ -34,7 +34,8 @@ class Member():
         self.buyer_api = BuyerAPIs(cust_db, None)
         self.seller_api = SellerAPIs(cust_db, None)
         self.func_to_ptr = {
-            "create_buyer": self.buyer_api.create_buyer
+            "create_buyer": self.buyer_api.create_buyer,
+            "create_seller": self.seller_api.create_seller
         }
 
         self.requests = {}
