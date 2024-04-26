@@ -104,13 +104,13 @@ class ProductDatabase:
 
 
 class CustomerDatabase:
-    def __init__(self):
+    def __init__(self, db_name):
         try:
             mydb = mysql.connector.connect(
             host="localhost",
             user=os.environ.get("USER"),
             password=os.environ.get("PWD"),
-            db="customer"
+            db=db_name
             )
             self.conn = mydb
             self.cursor = self.conn.cursor()

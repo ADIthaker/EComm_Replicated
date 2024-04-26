@@ -11,7 +11,6 @@ import grpc_pb2.buyer_pb2_grpc as buyer_pb2_grpc
 import grpc_pb2.buyer_pb2 as buyer_pb2
 from apis.buyer_api import BuyerAPIs
 from utils.database import ProductDatabase, CustomerDatabase
-from customer_group import CustomerMember
 
 '''
 Earlier:
@@ -26,6 +25,35 @@ if any number missed send NACK of that sequence number to member
 Global seq number: When a number is missed send NACK to kmodn member id.
 
 '''
+
+import socket
+import pickle
+import queue
+
+IP = 'localhost'
+PORT = 7010
+IPs = [('localhost', 7003), ('localhost', 7004), ('localhost', 7005), ('localhost', 7006), ('localhost', 7007)]
+
+def talk_group(func, args):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((IP, PORT))
+    send_msg = {
+        "msg_type": "submit_request",
+        "request": (func, args),
+    }
+    ser_req = pickle.dumps(send_msg)
+    sock.sendto(ser_req, IPs[0])
+
+    #recving part
+    ser_msg = None
+    while True:
+        ser_msg, _ = sock.recvfrom(10000)
+        if ser_msg is not None:
+            break
+    msg = pickle.loads(ser_msg)
+    return msg
+    
+    
 class BuyServicer(buyer_pb2_grpc.BuyServicer):
     def CreateAccount(self, request, context):
         print("Got a CreateAccount Request", request)
@@ -34,8 +62,9 @@ class BuyServicer(buyer_pb2_grpc.BuyServicer):
             "password": request.pwd,
             "items": request.items,
         }
-        api_handler = BuyerAPIs(CustomerDatabase(), ProductDatabase())
-        response = api_handler.create_buyer(user)
+        # api_handler = BuyerAPIs(CustomerDatabase(), ProductDatabase())
+        # response = api_handler.create_buyer(user)
+        response = talk_group("create_buyer", (user))
         create_user_reply = buyer_pb2.UpdateResponse()
         if response is None:
             create_user_reply.error = True
