@@ -5,7 +5,7 @@ import time
 from dotenv import load_dotenv
 from pysyncobj import SyncObj, replicated
 
-load_dotenv()
+load_dotenv(override=True)
 
 class ProductDatabase(SyncObj):
     def __init__(self, selfNodeAddr, otherNodeAddrs):
@@ -14,14 +14,14 @@ class ProductDatabase(SyncObj):
             print(otherNodeAddrs)
             time.sleep(10)
             mydb = mysql.connector.connect(
-            host="localhost",
+            host=os.environ.get('SQL_SERVER'),
             user=os.environ.get("USER"),
             password=os.environ.get("PWD"),
-            db="product"
+            db="product5"
             )
             self.conn = mydb
             self.cursor = self.conn.cursor()
-            self.cursor.execute("CREATE DATABASE IF NOT EXISTS Product")
+            # self.cursor.execute("CREATE DATABASE IF NOT EXISTS Product")
             self.cursor.execute('''CREATE TABLE IF NOT EXISTS Item(
                                 Pname VARCHAR(32) NOT NULL, 
                                 Category INT NOT NULL,
