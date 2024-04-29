@@ -23,10 +23,12 @@ class CustomerMember():
         self.DB = {}
         self.log = []
         self.staged = None
+        self.id = index
         self.term = 0
         self.status = FOLLOWER
         self.majority = ((len(self.fellow) + 1) // 2) + 1
         self.voteCount = 0
+        self.mem_ls = set()
         self.commitIdx = 0
         self.timeout_thread = None
         self.cust_db = CustomerDatabase('customer' + str(index+1))
@@ -70,7 +72,8 @@ class CustomerMember():
         message = {
             "term": term,
             "commitIdx": self.commitIdx,
-            "staged": self.staged
+            "staged": self.staged,
+            "id": self.id,
         }
         route = "vote_req"
         while self.status == CANDIDATE and self.term == term:
@@ -87,6 +90,7 @@ class CustomerMember():
                     if term > self.term:
                         self.term = term
                         self.status = FOLLOWER
+                        self.retransmit()
                     # fix out-of-date needed
                 break
 
@@ -94,7 +98,7 @@ class CustomerMember():
     # ELECTION TIME FOLLOWER
 
     # some other server is asking
-    def decide_vote(self, term, commitIdx, staged):
+    def decide_vote(self, term, commitIdx, staged, sender_id):
         # new election
         # decline all non-up-to-date candidate's vote request as well
         # but update term all the time, not reset timeout during decision
@@ -105,6 +109,7 @@ class CustomerMember():
             self.term = term
             return True, self.term
         else:
+            self.mem_ls.discard(sender_id)
             return False, self.term
 
     # ------------------------------
@@ -147,20 +152,32 @@ class CustomerMember():
             reply = utils.send(follower, route, message)
             if reply:
                 self.heartbeat_reply_handler(reply.json()["term"],
-                                             reply.json()["commitIdx"])
+                                             reply.json()["commitIdx"], reply.json()['id'])
             delta = time.time() - start
             # keep the heartbeat constant even if the network speed is varying
             time.sleep((cfg.HB_TIME - delta) / 1000)
 
+    def retransmit(self, follower):
+        route = "heartbeat"
+        first_message = {"term": self.term, "addr": self.addr}
+        reply = utils.send(follower, route, first_message)
+
+        if reply and reply.json()["commitIdx"] > self.commitIdx:
+            i = self.commitIdx - reply.json()["commitIdx"]
+            self.term += 1
+            action = reply.json()['action']
+            self.log.append(action)
+            self.staged = self.log[-1]
+
     # we may step down when get replied
-    def heartbeat_reply_handler(self, term, commitIdx):
+    def heartbeat_reply_handler(self, term, commitIdx, sender_id):
         # i thought i was leader, but a follower told me
         # that there is a new term, so i now step down
         if term > self.term:
             self.term = term
+            self.mem_ls.add(sender_id)
             self.status = FOLLOWER
             self.init_timeout()
-
         # TODO logging replies
 
     # ------------------------------
@@ -189,7 +206,7 @@ class CustomerMember():
             # i have missed a few messages
             if self.term < term:
                 self.term = term
-
+                self.retransmit()
             # handle client request
             if "action" in msg:
                 print("received action", msg)
@@ -204,7 +221,7 @@ class CustomerMember():
                         self.staged = msg["payload"]
                     self.commit()
 
-        return self.term, self.commitIdx
+        return self.term, self.commitIdx, self.id
 
     # initiate timeout thread, or reset it
     def init_timeout(self):

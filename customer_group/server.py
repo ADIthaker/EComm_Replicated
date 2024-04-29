@@ -52,16 +52,17 @@ def vote_req():
     term = request.json["term"]
     commitIdx = request.json["commitIdx"]
     staged = request.json["staged"]
-    choice, term = n.decide_vote(term, commitIdx, staged)
+    sender_id = request.json["id"]
+    choice, term = n.decide_vote(term, commitIdx, staged, sender_id)
     message = {"choice": choice, "term": term}
     return jsonify(message)
 
 
 @app.route("/heartbeat", methods=['POST'])
 def heartbeat():
-    term, commitIdx = n.heartbeat_follower(request.json)
+    term, commitIdx, id = n.heartbeat_follower(request.json)
     # return anyway, if nothing received by leader, we are dead
-    message = {"term": term, "commitIdx": commitIdx}
+    message = {"term": term, "commitIdx": commitIdx, "id": id}
     return jsonify(message)
 
 
