@@ -14,6 +14,7 @@ from apis.seller_api import SellerAPIs
 from utils.database import CustomerDatabase
 
 RAFT_END_POINT = 'http://localhost:5000/request'
+ROTATING_SEQUENCER_URL = 'http://localhost:5005/request'
 
 class SellServicer(seller_pb2_grpc.SellServicer):
     def CreateAccount(self, request, context):
@@ -25,7 +26,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
             "PosFb": request.posFb,
             "NegFb": request.negFb
         }
-        api_handler = SellerAPIs(CustomerDatabase(), RAFT_END_POINT)
+        api_handler = SellerAPIs(ROTATING_SEQUENCER_URL, RAFT_END_POINT)
         response = api_handler.create_seller(user)
         create_user_reply = seller_pb2.UpdateResponse()
         if response is None:
@@ -42,7 +43,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
             "name": request.name,
             "password": request.password
         }
-        api_handler = SellerAPIs(CustomerDatabase(), RAFT_END_POINT)
+        api_handler = SellerAPIs(ROTATING_SEQUENCER_URL, RAFT_END_POINT)
         result = api_handler.get_seller_id(seller)
         seller_reply = seller_pb2.UpdateResponse()
         print(result)
@@ -58,7 +59,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
     def GetSellerRating(self, request, context):
         print("Got a GetSellerRating Request")
         userId = request.id
-        api_handler = SellerAPIs(CustomerDatabase(), RAFT_END_POINT)
+        api_handler = SellerAPIs(ROTATING_SEQUENCER_URL, RAFT_END_POINT)
         result = api_handler.get_seller_rating(userId)
         print("result", result)
         seller_rating_reply = seller_pb2.SellerRating()
@@ -80,7 +81,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
         "cond": request.cond,
         "sellerId": request.sellerId
         }
-        api_handler = SellerAPIs(CustomerDatabase(), RAFT_END_POINT)
+        api_handler = SellerAPIs(ROTATING_SEQUENCER_URL, RAFT_END_POINT)
         result = api_handler.put_item_for_sale(item)
         reply = seller_pb2.UpdateResponse()
         if result is not None:
@@ -94,7 +95,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
     
     def ChangeSalePrice(self, request, context):
         print("Got a ChangeSalePrice Request")
-        api_handler = SellerAPIs(CustomerDatabase(), RAFT_END_POINT)
+        api_handler = SellerAPIs(ROTATING_SEQUENCER_URL, RAFT_END_POINT)
         result = api_handler.change_sale_price(request.itemId, request.sellerId , request.price)
         reply = seller_pb2.UpdateResponse()
         print(result)
@@ -109,7 +110,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
 
     def RemoveItem(self, request, context):
         print("Got a RemoveItem Request")
-        api_handler = SellerAPIs(CustomerDatabase(), RAFT_END_POINT)
+        api_handler = SellerAPIs(ROTATING_SEQUENCER_URL, RAFT_END_POINT)
         result = api_handler.remove_item(request.itemId, request.sellerId , request.quantity)
         reply = seller_pb2.UpdateResponse()
         print(result)
@@ -125,7 +126,7 @@ class SellServicer(seller_pb2_grpc.SellServicer):
     def DisplayItems(self, request, context):
         print("Got DisplayItems request")
         sellerId = request.id
-        api_handler = SellerAPIs(CustomerDatabase(), RAFT_END_POINT)
+        api_handler = SellerAPIs(ROTATING_SEQUENCER_URL, RAFT_END_POINT)
         result = api_handler.display_items(sellerId)
         print("Inside backend server")
         print(result)

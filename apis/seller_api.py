@@ -1,22 +1,29 @@
 import requests
 
+# To the server, send a dict payload with the following keys: 'key', 'value'
+
 class SellerAPIs:
-    def __init__(self, cust_db, raft_ip):
-        self.cust_db = cust_db
+    def __init__(self, rotating_seq_ip, raft_ip):
+        self.rotating_seq = rotating_seq_ip
         self.raft = raft_ip
 
     def create_seller(self, seller): #create account checked
-        self.cust_db.create_seller(seller)
+        # self.cust_db.create_seller(seller)
+        payload = {'key': 'create_seller' ,'value': seller}
+        requests.put(self.rotating_seq, json={'payload': payload})
 
     def get_seller_id(self, seller):
-        idDB = self.cust_db.get_seller_id(seller)
+        # idDB = self.cust_db.get_seller_id(seller)
+        payload = {'key': 'get_seller_id' ,'value': seller}
+        idDB = requests.put(self.rotating_seq, json={'payload': payload})
         if idDB:
             return idDB
         else:
             return False
         
     def is_seller(self, Id): #login checked
-        seller = self.cust_db.get_seller(Id)
+        # seller = self.cust_db.get_seller(Id)
+        seller = requests.put(self.rotating_seq, json={'key': 'is_seller' ,'Id': Id})
         if seller is not None and len(seller)!=0:
             print(seller)
             return seller[0][1]
@@ -24,7 +31,8 @@ class SellerAPIs:
             return False
 
     def get_seller_rating(self, Id): #checked
-        seller = self.cust_db.get_seller(Id)
+        # seller = self.cust_db.get_seller(Id)
+        seller = requests.put(self.rotating_seq, json={'key': 'get_seller_rating' ,'Id': Id})
         if seller is not None and len(seller)!=0:
             posfb, negfb = seller[0][3] , seller[0][4]
             return (posfb, negfb)
@@ -61,7 +69,7 @@ class SellerAPIs:
     
     def remove_item(self, Id, seller_id, quantity): #checked
         # item = self.prod_db.get_item(Id, seller_id)
-        item = requests.get(self.raft, json={'Id': Id, 'seller_id': seller_id})
+        item = requests.get(self.raft, json={'Id': Id, 'value': seller_id})
         new_item = {}
         if item is not None and len(item)!=0:
             item = item[0]

@@ -1,31 +1,41 @@
 from zeep import Client
+import requests
+
+# To the server, send a dict payload with the following keys: 'key', 'value'
 
 class BuyerAPIs:
-    def __init__(self, cust_db, prod_db):
-        self.cust_db = cust_db
-        self.prod_db = prod_db
+    def __init__(self, rotating_seq_ip, raft_ip):
+        self.rotating_seq = rotating_seq_ip
+        self.raft = raft_ip
     
     def create_buyer(self, buyer): #create account checked
-        self.cust_db.create_buyer(buyer)
+        # self.cust_db.create_buyer(buyer)
+        payload = {'key': 'create_buyer' ,'value': buyer}
+        requests.put(self.rotating_seq, json={'payload': payload})
 
     def get_buyer_id(self, buyer):
-        idDB = self.cust_db.get_buyer_id(buyer)
+        # idDB = self.cust_db.get_buyer_id(buyer)
+        payload = {'key': 'get_buyer_id' ,'value': buyer}
+        idDB = requests.put(self.rotating_seq, json={'payload': payload})
         if idDB:
             return idDB
         else:
             return False
         
-    def is_buyer(self, id): #login checked
-        buyer = self.cust_db.get_buyer(id)
+    def is_buyer(self, Id): #login checked
+        # buyer = self.cust_db.get_buyer(Id)
+        buyer = requests.put(self.rotating_seq, json={'key': 'is_buyer' ,'Id': Id})
         if buyer is not None and len(buyer)!=0:
             return buyer[0][1]
         else:
             return False
 
     def get_seller_rating(self, Id): #checked
-        seller = self.cust_db.get_seller(Id)
+        # seller = self.cust_db.get_seller(Id)
+        payload = {'key': 'get_seller_rating' ,'value': Id}
+        seller = requests.put(self.rotating_seq, json={'payload': payload})
         if seller is not None and len(seller)!=0:
-            posfb, negfb = seller[0][3], seller[0][4]
+            posfb, negfb = seller[0][3] , seller[0][4]
             return (posfb, negfb)
         return None
     
@@ -46,7 +56,8 @@ class BuyerAPIs:
         # call update to all sellers and update their pos and neg fb
         updates = []
         for seller_id in pos_fb.keys():
-            seller = self.cust_db.get_seller(seller_id)
+            # seller = self.cust_db.get_seller(seller_id)
+            seller = requests.put(self.rotating_seq, json={'key': 'is_seller' ,'Id': seller_id})
             if seller is not None and len(seller)!=0:
                 posfb, negfb = seller[0][4], seller[0][5]
                 newposfb = posfb + pos_fb[seller[0][2]]
@@ -90,7 +101,8 @@ class BuyerAPIs:
                 
     def add_items_cart(self, items, buyer_id): # items must be a list of dicts where each dict has {'id': quantity} checked
         # assume cart exists only and then add
-        cart = self.cust_db.get_cart(buyer_id)
+        # cart = self.cust_db.get_cart(buyer_id)
+        cart = requests.put(self.rotating_seq, json={'key': 'add_items_cart' ,'Id': buyer_id})
         if cart is not None and len(cart)!=0:
             new_items = self._add_cart_items(items, cart[0])
             updated_cart = {}
@@ -105,7 +117,8 @@ class BuyerAPIs:
 
     def remove_items_cart(self, items, buyer_id): #checked
         # assume cart exists only and then remove
-        cart = self.cust_db.get_cart(buyer_id)
+        # cart = self.cust_db.get_cart(buyer_id)
+        cart = requests.put(self.rotating_seq, json={'key': 'remove_items_cart' ,'Id': buyer_id})
         if cart is not None and len(cart)!=0:
             new_items = self._remove_cart_items(items, cart[0])
             updated_cart = {}
@@ -118,11 +131,13 @@ class BuyerAPIs:
             return None
 
     def get_available_items(self, search): # search is a dictionary with 'cat' | checked
-        items = self.prod_db.search_item(search)
+        # items = self.prod_db.search_item(search)
+        items = requests.put(self.rotating_seq, json={'key': 'get_available_items' ,'search': search})
         return items
     
     def get_cart(self, buyer_id): #checked
-        cart = self.cust_db.get_cart(buyer_id)
+        # cart = self.cust_db.get_cart(buyer_id)
+        cart = requests.put(self.rotating_seq, json={'key': 'get_cart' ,'Id': buyer_id})
         if cart is not None and len(cart)!=0:
             cart = cart[0]
             res = self._convert_string_cart(cart)
@@ -152,10 +167,12 @@ class BuyerAPIs:
         res = self._convert_cart_string(cart)
         cart["products"] = res
         cart["buyer_id"] = buyer_id
-        return self.cust_db.create_cart(cart)
+        # return self.cust_db.create_cart(cart)
+        return requests.put(self.rotating_seq, json={'key': 'save_cart', 'cart': cart,'Id': buyer_id})
     
     def delete_cart(self, buyerId): #checked
-        return self.cust_db.delete_cart(buyerId)
+        # return self.cust_db.delete_cart(buyerId)
+        return requests.put(self.rotating_seq, json={'key': 'delete_cart', 'Id': buyerId})
     
     def pre_purchase(self, card_details):
         client = Client('http://localhost:8000/?wsdl')
@@ -164,10 +181,12 @@ class BuyerAPIs:
         return result
 
     def post_purchase(self, buyerID, cart):
-        self.cust_db.create_purchase(cart)
+        # self.cust_db.create_purchase(cart)
+        return requests.put(self.rotating_seq, json={'key': 'post_purchase', 'cart': cart, 'Id': buyerID})
 
     def make_purchase_from_db(self, buyerID, card_details): #checked
-        pur_res = self.pre_purchase(card_details)
+        # pur_res = self.pre_purchase(card_details)
+        pur_res = requests.put(self.rotating_seq, json={'key': 'make_purchase_from_db', 'card_details': card_details, 'Id': buyerID})
         if pur_res:
             cart = self.cust_db.get_cart(buyerID)
             if cart is not None and len(cart)!=0:
@@ -186,7 +205,8 @@ class BuyerAPIs:
             return False
         
     def make_purchase_from_cart(self, cart, buyerID, card_details): #checked
-        pur_res = self.pre_purchase(card_details)
+        # pur_res = self.pre_purchase(card_details)
+        pur_res = requests.put(self.rotating_seq, json={'key': 'make_purchase_from_cart', 'card_details': card_details, 'Id': buyerID})
         if pur_res:
             res = self._convert_cart_string(cart)
             cart["products"] = res
@@ -197,7 +217,8 @@ class BuyerAPIs:
             return False
 
     def get_history(self, BuyerId): #checked
-        res = self.cust_db.get_purchases(BuyerId)
+        # res = self.cust_db.get_purchases(BuyerId)
+        res = requests.put(self.rotating_seq, json={'key': 'get_history', 'Id': BuyerId})
         if res is not None and len(res) !=0:
             history = []
             for purchase in res:
