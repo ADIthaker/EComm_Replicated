@@ -7,6 +7,8 @@ The system comprises several interconnected components, each serving a specific 
 - **Buyer Server Backend**
 - **Seller Server Backend**
 
+![System Architecture](./sys_arch.png)
+
 The server frontends act as intermediaries, receiving requests from clients and establishing connections with the relevant database instances. The database instances consist of the Product Database and Customer Database, each managed by separate server backends. The flow of a typical request follows this sequence:
 
 **Client** ---*REST Request*---> **Server Frontend** ---*gRPC Request + *---> **Target Backend Functionality** ---*MySQL Request*---> **Database Query**
@@ -24,3 +26,6 @@ The current state of the application effectively supports all the functionalitie
 4. **Transaction History:** The user's transaction history is not stored as a timeline but rather as a snapshot of the cart when the "make purchase" functionality is invoked.
 
 5. **Search Mechanism:** The buyer's search functionality attempts to match the existence of the exact keyword as a substring in the concatenated string of all keywords associated with a product.
+
+This project is functionally similar to [Non Replicated E-commerice](https://github.com/ADIthaker/REST_gRPC_Ecomm)!
+
